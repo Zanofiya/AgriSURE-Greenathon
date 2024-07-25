@@ -1,0 +1,91 @@
+#define BLYNK_TEMPLATE_ID "TMPL3PamnEyJj"
+#define BLYNK_TEMPLATE_NAME "IoT Greenhouse"
+#define BLYNK_AUTH_TOKEN "Dt_r_KJJnNqHr7ThC0XOsnNxO70DOgyT"
+
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+#define BLYNK_PRINT Serial
+#include <ESP8266WiFi.h> 
+#include <BlynkSimpleEsp8266.h>
+char auth[] = BLYNK_AUTH_TOKEN;
+char ssid[] = "RMKCET";  // type your wifi name
+char pass[] = "RMKCET@1128";  // type your wifi password
+float temperature;
+BlynkTimer timer;
+
+const int ONE_WIRE_BUS = 13; // D7
+OneWire oneWire(ONE_WIRE_BUS);  
+DallasTemperature sensors(&oneWire);
+
+
+void sendSensor()
+{
+  int moisture, temperature, humidity, sun ;
+  
+  sensors.requestTemperatures();
+  temperature = sensors.getTempCByIndex(0);
+  moisture = analogRead(A0);
+  moisture = map(moisture, 0, 1023, 100, 0);
+  humidity = requestTHumidity();
+  sun = !digitalRead(D3);
+
+  if(temperature > 40)
+  digitalWrite();
+  else
+  digitalWrite(D6, HIGH);
+  
+  if(moisture < 40)
+  digitalWrite(D5, LOW);
+  else
+  digitalWrite(D5, HIGH);
+  
+  if(sun == LOW)
+  digitalWrite(D0, HIGH);
+  else
+  digitalWrite(D0, LOW);
+  
+  Blynk.virtualWrite(V0, moisture);
+  Blynk.virtualWrite(V1, temperature);
+  Blynk.virtualWrite(V2, humidity);
+  Blynk.virtualWrite(V3, sun);
+  //Blynk.virtualWrite(V4, rain);
+  lcd.setCursor(0,0);
+  lcd.print("M ");
+  lcd.print(moisture);
+  lcd.setCursor(6,0);
+  lcd.print(" H ");
+  lcd.print(humidity);
+  lcd.setCursor(0,1);
+  lcd.print("Temperature ");
+  lcd.print(temperature);
+  delay(5);
+  }
+void setup()
+{
+  lcd.begin();
+  lcd.backlight();
+  Serial.begin(115200);
+  Blynk.begin(auth, ssid, pass);
+  timer.setInterval(1000L, sendSensor);
+  pinMode(A0,INPUT); // moisture
+  pinMode(D3,INPUT); // sun
+  pinMode(D4,INPUT); // humidity
+  pinMode(D5,OUTPUT); // Pump
+  pinMode(D6,OUTPUT); // Fan
+  pinMode(D0, OUTPUT); // LED
+
+  digitalWrite(D0, LOW);
+  digitalWrite(D5, HIGH);
+  digitalWrite(D6, HIGH);
+  }
+
+void loop()
+{
+  Blynk.run();
+  timer.run();
+ }
